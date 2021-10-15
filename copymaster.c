@@ -10,12 +10,19 @@ void FatalError(char c, const char* msg, int exit_status);
 void PrintCopymasterOptions(struct CopymasterOptions* cpm_options);
 
 
+
+
 int main(int argc, char* argv[])
 {
     struct CopymasterOptions cpm_options = ParseCopymasterOptions(argc, argv);
 
+
     //-------------------------------------------------------------------
     // Kontrola hodnot prepinacov
+
+    if (cpm_options.fast) fast_copy(cpm_options);
+
+
     //-------------------------------------------------------------------
 
     // Vypis hodnot prepinacov odstrante z finalnej verzie
