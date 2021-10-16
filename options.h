@@ -1,7 +1,16 @@
 #ifndef UTIL_H
 #define UTIL_H
 
+
 #include <sys/types.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <errno.h>
+#include <stdbool.h>
+#include <fcntl.h>
+#include <unistd.h>
+#include <getopt.h>
+#include <string.h>
 
 #define kUMASK_OPTIONS_MAX_SZ 10
 
@@ -39,6 +48,7 @@ struct CopymasterOptions {
 
 struct CopymasterOptions ParseCopymasterOptions(int argc, char *argv[]);
 
-void FatalError(char c, const char* msg, int exit_status);
+void FatalError (char c, const char* msg, int exit_status);
+
 
 #endif /* UTIL_H */

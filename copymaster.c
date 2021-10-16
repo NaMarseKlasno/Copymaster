@@ -216,7 +216,7 @@ void fast_copy(struct CopymasterOptions cpm)
 
 void slow_copy (struct CopymasterOptions cpm)
 {
-    int in, out;
+    int in, out, temp;
 
     /// open infile
     in = open(cpm.infile, O_RDONLY);
@@ -230,8 +230,8 @@ void slow_copy (struct CopymasterOptions cpm)
     char array[len];
     lseek(in, 0, SEEK_SET);
 
-    for (int i = 0; i >= 0; i = read(in, &array, len), i > 0? i = write(out, &array, i) : FatalError('s', "INA CHYBA", 21));
-
+    for (int i = read(in, &array, 1); i > 0; write(out, &array, i), i = read(in, &array, 1));
+    
     close(in);
     close(out);
 }
