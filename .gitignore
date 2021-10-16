@@ -1,4 +1,5 @@
 *.txt
 *.idea/
 *copymaster
-*based
+*.DS_Store
+*bugs/
