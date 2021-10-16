@@ -11,13 +11,32 @@
 #include "options.h"
 
 
+/**                         <RACCOON>
+ *
+ *                                    .                : :
+ *                  _..----..__   __..:'.-'''-.-''    .  :
+ *                .'      ,    '''    '    :   .'    /  '
+ *               ',                  ( -=o):(o=-)   .  :
+ *              :     ,               ''.  ;  .'  __:  :
+ *              :          :      ,      '.0.''.-'.))  :  __..--
+ *              :           :                ._.-'__| ':''.
+ *               .           :   ,   ..  :.-' __.' /   ;    .
+ *              .'       ,   :    _.'  '. '.''    /   /  '
+ *            .:. .'.        :--:'_..--'''.))  .  ' -'    __.--'
+ *          .''::'   '-.  .-''.  '.   .             __.--'
+ *          :...:     __\  '.  '..))     '    __.--'
+ *          ::'':.--''   '.)))          __.--'
+ */
+
+
+
 void FatalError(char c, const char* msg, int exit_status);
 void PrintCopymasterOptions(struct CopymasterOptions* cpm_options);
 
 // === switches ===
 void no_switches (struct CopymasterOptions cpm);
 void fast_copy (struct CopymasterOptions cpm);
-//void slow_copy (struct CopymasterOptions cpm);
+void slow_copy (struct CopymasterOptions cpm);
 // === switches ===
 
 
@@ -61,7 +80,7 @@ int main(int argc, char* argv[])
 
     if (cpm_options.fast) fast_copy(cpm_options);
 
-    //if (cpm_options.slow) slow_copy(cpm_options);
+    if (cpm_options.slow) slow_copy(cpm_options);
 
 
     //-------------------------------------------------------------------
@@ -190,6 +209,28 @@ void fast_copy(struct CopymasterOptions cpm)
     temp = read(in, &array, len);
     if (temp > 0) temp = write(out, &array, temp);
     if (temp < 0) FatalError('b', "INA CHYBA", 21);
+
+    close(in);
+    close(out);
+}
+
+void slow_copy (struct CopymasterOptions cpm)
+{
+    int in, out;
+
+    /// open infile
+    in = open(cpm.infile, O_RDONLY);
+    check_errors(in, 'f', 21);
+
+    /// open outfile
+    out = open(cpm.outfile, O_WRONLY | O_CREAT | O_TRUNC, 0644);
+    check_errors(out, 'f', 21);
+
+    long int len = lseek(in, 0, SEEK_END);
+    char array[len];
+    lseek(in, 0, SEEK_SET);
+
+    for (int i = 0; i >= 0; i = read(in, &array, len), i > 0? i = write(out, &array, i) : FatalError('s', "INA CHYBA", 21));
 
     close(in);
     close(out);
