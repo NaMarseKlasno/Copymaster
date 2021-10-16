@@ -37,6 +37,8 @@ void PrintCopymasterOptions(struct CopymasterOptions* cpm_options);
 void no_switches (struct CopymasterOptions cpm);
 void fast_copy (struct CopymasterOptions cpm);
 void slow_copy (struct CopymasterOptions cpm);
+void create_copy (struct CopymasterOptions cpm);
+
 // === switches ===
 
 
@@ -81,6 +83,8 @@ int main(int argc, char* argv[])
     if (cpm_options.fast) fast_copy(cpm_options);
 
     if (cpm_options.slow) slow_copy(cpm_options);
+
+    if (cpm_options.create) create_copy(cpm_options);
 
 
     //-------------------------------------------------------------------
@@ -192,7 +196,7 @@ void no_switches (struct CopymasterOptions cpm)
 
 void fast_copy(struct CopymasterOptions cpm)
 {
-    int in, out, temp;
+    int in, out, tmp;
 
     /// open infile
     in = open(cpm.infile, O_RDONLY);
@@ -206,9 +210,7 @@ void fast_copy(struct CopymasterOptions cpm)
     char array[len];
     lseek(in, 0, SEEK_SET);
 
-    temp = read(in, &array, len);
-    if (temp > 0) temp = write(out, &array, temp);
-    if (temp < 0) FatalError('b', "INA CHYBA", 21);
+    (tmp = read(in, &array, len)) > 0 ? write(out, &array, tmp) : FatalError('f', "INA CHYBA", 21);
 
     close(in);
     close(out);
@@ -216,7 +218,7 @@ void fast_copy(struct CopymasterOptions cpm)
 
 void slow_copy (struct CopymasterOptions cpm)
 {
-    int in, out, temp;
+    int in, out;
 
     /// open infile
     in = open(cpm.infile, O_RDONLY);
@@ -231,7 +233,29 @@ void slow_copy (struct CopymasterOptions cpm)
     lseek(in, 0, SEEK_SET);
 
     for (int i = read(in, &array, 1); i > 0; write(out, &array, i), i = read(in, &array, 1));
-    
+
+    close(in);
+    close(out);
+}
+
+void create_copy (struct CopymasterOptions cpm)
+{
+    int in, out = 0, tmp;
+
+    /// open infile
+    in = open(cpm.infile, O_RDONLY);
+    check_errors(in, 'c', 23);
+
+    /// open outfile
+    open(cpm.outfile, O_RDONLY) < 0 ? (out = open(cpm.outfile, O_WRONLY | O_CREAT | O_TRUNC, 0644)) :  FatalError('c', "SUBOR EXISTUJE", 23);
+    check_errors(out, 'c', 23);
+
+    long int len = lseek(in, 0, SEEK_END);
+    char array[len];
+    lseek(in, 0, SEEK_SET);
+
+    (tmp = read(in, &array, len)) > 0 ? write(out, &array, tmp) : FatalError('c', "INA CHYBA", 23);
+
     close(in);
     close(out);
 }

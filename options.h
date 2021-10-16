@@ -51,4 +51,5 @@ struct CopymasterOptions ParseCopymasterOptions(int argc, char *argv[]);
 void FatalError (char c, const char* msg, int exit_status);
 
 
+
 #endif /* UTIL_H */
