@@ -9,7 +9,17 @@
 void FatalError(char c, const char* msg, int exit_status);
 void PrintCopymasterOptions(struct CopymasterOptions* cpm_options);
 
+// === switches ===
+void no_switches (struct CopymasterOptions cpm);
+void fast_copy (struct CopymasterOptions cpm);
+//void slow_copy (struct CopymasterOptions cpm);
+// === switches ===
 
+
+// === secondary functions ===
+bool is_any_switch (struct CopymasterOptions cpm_options);
+void check_errors (int file, char flag, int status);
+// === secondary functions ===
 
 
 int main(int argc, char* argv[])
@@ -20,7 +30,9 @@ int main(int argc, char* argv[])
     //-------------------------------------------------------------------
     // Kontrola hodnot prepinacov
 
-    if (cpm_options.fast) fast_copy(cpm_options);
+
+
+    //if (cpm_options.fast) fast_copy(cpm_options);
 
 
     //-------------------------------------------------------------------
@@ -39,9 +51,14 @@ int main(int argc, char* argv[])
     }
     
     // TODO Nezabudnut dalsie kontroly kombinacii prepinacov ...
-    
-    //-------------------------------------------------------------------
-    // Kopirovanie suborov
+
+    if (is_any_switch(cpm_options)) no_switches(cpm_options);
+
+    if (cpm_options.fast) fast_copy(cpm_options);
+
+    //if (cpm_options.slow) slow_copy(cpm_options);
+
+
     //-------------------------------------------------------------------
     
     // TODO Implementovat kopirovanie suborov
@@ -116,4 +133,83 @@ void PrintCopymasterOptions(struct CopymasterOptions* cpm_options)
     printf("truncate:      %d\n", cpm_options->truncate);
     printf("truncate_size: %ld\n", cpm_options->truncate_size);
     printf("sparse:        %d\n", cpm_options->sparse);
+}
+
+
+
+
+// =======================================
+// ===========  PREPINACE ================
+// =======================================
+void no_switches (struct CopymasterOptions cpm)
+{
+    int in, out, temp;
+
+    /// open infile
+    in = open(cpm.infile, O_RDONLY);
+    check_errors(in, 'b', 21);
+
+    /// open outfile
+    out = open(cpm.outfile, O_WRONLY | O_CREAT | O_TRUNC, 0644);
+    check_errors(out, 'b', 21);
+
+
+    long int len = lseek(in, 0, SEEK_END);
+    char array[len];
+    lseek(in, 0, SEEK_SET);
+
+    temp = read(in, &array, len);
+    if (temp > 0) temp = write(out, &array, temp);
+    if (temp < 0) FatalError('b', "INA CHYBA", 21);
+
+    close(in);
+    close(out);
+}
+
+void fast_copy(struct CopymasterOptions cpm)
+{
+    int in, out, temp;
+
+    /// open infile
+    in = open(cpm.infile, O_RDONLY);
+    check_errors(in, 'f', 21);
+
+    /// open outfile
+    out = open(cpm.outfile, O_WRONLY | O_CREAT | O_TRUNC, 0644);
+    check_errors(out, 'f', 21);
+
+    long int len = lseek(in, 0, SEEK_END);
+    char array[len];
+    lseek(in, 0, SEEK_SET);
+
+    temp = read(in, &array, len);
+    if (temp > 0) temp = write(out, &array, temp);
+    if (temp < 0) FatalError('b', "INA CHYBA", 21);
+
+    close(in);
+    close(out);
+}
+
+// =======================================
+
+
+
+
+
+
+
+bool is_any_switch (struct CopymasterOptions cpm)
+{
+    if (cpm.fast == 0 && cpm.slow == 0 && cpm.create == 0 && cpm.overwrite == 0 &&
+        cpm.append == 0 && cpm.lseek == 0 && cpm.directory == 0 && cpm.delete_opt == 0 &&
+        cpm.chmod == 0 && cpm.inode == 0 && cpm.umask == 0 && cpm.link == 0 && cpm.truncate == 0 && cpm.sparse == 0)
+        return true;
+
+    return false;
+}
+
+void check_errors (int file, char flag, int status)
+{
+    if (file == ENOENT) FatalError(flag, "SUBOR NEEXISTUJE", status);
+    else if (file == -1 || file == -2) FatalError(flag, "INA CHYBA", status);
 }

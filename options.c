@@ -29,27 +29,27 @@ struct CopymasterOptions ParseCopymasterOptions(int argc, char *argv[])
 
     while (1)
     {
-        // viac informacii o spracovani jednotlivych prepinacov 
+        // viac informacii o spracovani jednotlivych prepinacov
         //  - pozri: man 3 getopt
 
         int option_index = 0;
 
         static struct option long_options[] = {
-            { "fast",      no_argument,       0, 'f' },
-            { "slow",      no_argument,       0, 's' },
-            { "create",    required_argument, 0, 'c' },
-            { "overwrite", no_argument,       0, 'o' },
-            { "append",    no_argument,       0, 'a' },
-            { "lseek",     required_argument, 0, 'l' },
-            { "directory", required_argument, 0, 'D' },
-            { "delete",    no_argument,       0, 'd' },
-            { "chmod",     required_argument, 0, 'm' },
-            { "inode",     required_argument, 0, 'i' },
-            { "umask",     required_argument, 0, 'u' },
-            { "link",      no_argument,       0, 'K' },
-            { "truncate",  required_argument, 0, 't' },
-            { "sparse",    no_argument,       0, 'S' },
-            { 0,             0,               0,  0  },
+                { "fast",      no_argument,       0, 'f' },
+                { "slow",      no_argument,       0, 's' },
+                { "create",    required_argument, 0, 'c' },
+                { "overwrite", no_argument,       0, 'o' },
+                { "append",    no_argument,       0, 'a' },
+                { "lseek",     required_argument, 0, 'l' },
+                { "directory", required_argument, 0, 'D' },
+                { "delete",    no_argument,       0, 'd' },
+                { "chmod",     required_argument, 0, 'm' },
+                { "inode",     required_argument, 0, 'i' },
+                { "umask",     required_argument, 0, 'u' },
+                { "link",      no_argument,       0, 'K' },
+                { "truncate",  required_argument, 0, 't' },
+                { "sparse",    no_argument,       0, 'S' },
+                { 0,             0,               0,  0  },
         };
         c = getopt_long(argc, argv, "fsc:oal:Ddm:i:u:Kt:S",
                         long_options, &option_index);
@@ -130,15 +130,15 @@ struct CopymasterOptions ParseCopymasterOptions(int argc, char *argv[])
                 }
                 memset(cpm_options.umask_options[i], 0, 4);
                 break;
-            case 'K': 
+            case 'K':
                 cpm_options.link = 1;
                 break;
             case 't':
                 cpm_options.truncate = 1;
                 sscanf(optarg, "%ld", &pos1);
-                cpm_options.truncate_size = (off_t)pos1; 
+                cpm_options.truncate_size = (off_t)pos1;
                 break;
-            case 'S': 
+            case 'S':
                 cpm_options.sparse = 1;
                 break;
             case '?':
@@ -159,27 +159,3 @@ struct CopymasterOptions ParseCopymasterOptions(int argc, char *argv[])
 
     return cpm_options;
 }
-
-
-void fast_copy(struct CopymasterOptions cpm)
-{
-    int in, out, temp;
-
-    /// open infile
-    if ((in = open(cpm.infile, O_RDONLY)) == -1) FatalError('f', "infile", 21);
-    /// open outfile
-    if ((out = open(cpm.outfile, O_WRONLY | O_CREAT | O_TRUNC, 0644) ) == -1) FatalError('f', "infile", 21);
-
-    long int len = lseek(in, 0, SEEK_END);
-    char array[len];
-    lseek(in, 0, SEEK_SET);
-
-    temp = read(in, &array, len);
-    if (temp > 0) write(out, &array, temp);
-
-    close(in);
-    close(out);
-}
-
-
-
