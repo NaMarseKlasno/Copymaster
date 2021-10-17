@@ -40,7 +40,7 @@ void slow_copy (struct CopymasterOptions cpm);
 void create_copy (struct CopymasterOptions cpm);
 void overwrite_copy (struct CopymasterOptions cpm);
 void append_copy (struct CopymasterOptions cpm);
-
+void lseek_copy (struct CopymasterOptions cpm);
 
 // === switches ===
 
@@ -92,6 +92,9 @@ int main(int argc, char* argv[])
     if (cpm_options.overwrite)       overwrite_copy(cpm_options);
 
     if (cpm_options.append)          append_copy(cpm_options);
+
+    if (cpm_options.lseek)           lseek_copy(cpm_options);
+
 
     //-------------------------------------------------------------------
     
@@ -307,6 +310,45 @@ void append_copy (struct CopymasterOptions cpm)
     lseek(in, 0, SEEK_SET);
 
     (tmp = read(in, &array, len)) > 0 ? write(out, &array, tmp) : FatalError('a', "INA CHYBA", 22);
+
+    close(in);
+    close(out);
+}
+
+void lseek_copy (struct CopymasterOptions cpm)
+{
+    int in, out = 0;
+
+    /// open infile
+    in = open(cpm.infile, O_RDONLY);
+    check_errors(in, 'l', 33);
+
+    /// open outfile
+    open(cpm.outfile, O_RDONLY) < 0 ? FatalError('l', "SUBOR NEEXISTUJE", 33) : (out = open(cpm.outfile, O_WRONLY, 0644));
+    check_errors(out, 'l', 33);
+
+    int len = cpm.lseek_options.num;
+    char array[len];
+
+    lseek(in,cpm.lseek_options.pos1,SEEK_SET);
+
+    switch (cpm.lseek_options.x)
+    {
+        case 0:
+            lseek(out, cpm.lseek_options.pos2, SEEK_SET);
+            break;
+        case 1:
+            lseek(out, cpm.lseek_options.pos2, SEEK_CUR);
+            break;
+        case 2:
+            lseek(out, cpm.lseek_options.pos2, SEEK_END);
+            break;
+        default:
+            break;
+    }
+
+    if (read(in, &array, len) == -1 ||  write(out, &array, len) == -1)
+        FatalError('l', "INA CHYBA", 33);
 
     close(in);
     close(out);
