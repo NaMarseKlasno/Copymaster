@@ -39,6 +39,8 @@ void fast_copy (struct CopymasterOptions cpm);
 void slow_copy (struct CopymasterOptions cpm);
 void create_copy (struct CopymasterOptions cpm);
 void overwrite_copy (struct CopymasterOptions cpm);
+void append_copy (struct CopymasterOptions cpm);
+
 
 // === switches ===
 
@@ -79,15 +81,17 @@ int main(int argc, char* argv[])
     
     // TODO Nezabudnut dalsie kontroly kombinacii prepinacov ...
 
-    if (is_any_switch(cpm_options)) no_switches(cpm_options);
+    if (is_any_switch(cpm_options))  no_switches(cpm_options);
 
-    if (cpm_options.fast) fast_copy(cpm_options);
+    if (cpm_options.fast)            fast_copy(cpm_options);
 
-    if (cpm_options.slow) slow_copy(cpm_options);
+    if (cpm_options.slow)            slow_copy(cpm_options);
 
-    if (cpm_options.create) create_copy(cpm_options);
+    if (cpm_options.create)          create_copy(cpm_options);
 
-    if (cpm_options.overwrite) overwrite_copy(cpm_options);
+    if (cpm_options.overwrite)       overwrite_copy(cpm_options);
+
+    if (cpm_options.append)          append_copy(cpm_options);
 
     //-------------------------------------------------------------------
     
@@ -281,6 +285,28 @@ void overwrite_copy (struct CopymasterOptions cpm)
     lseek(in, 0, SEEK_SET);
 
     (tmp = read(in, &array, len)) > 0 ? write(out, &array, tmp) : FatalError('o', "INA CHYBA", 24);
+
+    close(in);
+    close(out);
+}
+
+void append_copy (struct CopymasterOptions cpm)
+{
+    int in, out = 0, tmp;
+
+    /// open infile
+    in = open(cpm.infile, O_RDONLY);
+    check_errors(in, 'a', 22);
+
+    /// open outfile
+    open(cpm.outfile, O_RDONLY) < 0 ? FatalError('a', "SUBOR NEEXISTUJE", 22) : (out = open(cpm.outfile, O_WRONLY | O_CREAT | O_APPEND, 0644));
+    check_errors(out, 'a', 22);
+
+    long int len = lseek(in, 0, SEEK_END);
+    char array[len];
+    lseek(in, 0, SEEK_SET);
+
+    (tmp = read(in, &array, len)) > 0 ? write(out, &array, tmp) : FatalError('a', "INA CHYBA", 22);
 
     close(in);
     close(out);
