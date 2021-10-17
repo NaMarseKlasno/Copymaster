@@ -249,7 +249,9 @@ void create_copy (struct CopymasterOptions cpm)
     check_errors(in, 'c', 23);
 
     /// open outfile
-    open(cpm.outfile, O_RDONLY) < 0 ? (out = open(cpm.outfile, O_WRONLY | O_CREAT | O_TRUNC, 0644)) :  FatalError('c', "SUBOR EXISTUJE", 23);
+    if (cpm.create_mode > 777 || cpm.create_mode <= 0) FatalError('c', "ZLE PRAVA", 23);
+
+    open(cpm.outfile, O_RDONLY) < 0 ? (out = open(cpm.outfile, O_WRONLY | O_CREAT | O_TRUNC, cpm.create_mode)) :  FatalError('c', "SUBOR EXISTUJE", 23);
     check_errors(out, 'c', 23);
 
     long int len = lseek(in, 0, SEEK_END);
