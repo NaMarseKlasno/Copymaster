@@ -367,7 +367,7 @@ void directory_copy (struct CopymasterOptions cpm)
         if (strcmp(entry->d_name, cpm.infile) != 0) continue;
         lstat(entry->d_name,&statbuf);
 
-        if (!S_ISDIR(statbuf.st_mode)) FatalError('D', "VSTUPNY SUBOR NIE JE ADRESAR", 28);
+        //if (!S_ISDIR(statbuf.st_mode)) FatalError('D', "VSTUPNY SUBOR NIE JE ADRESAR", 28);
 
         strftime(buff, sizeof(buff), "%b %d %H:%M", localtime(&statbuf.st_atime));
 
