@@ -367,19 +367,18 @@ void directory_copy (struct CopymasterOptions cpm)
     struct group grp, *grpt;
 
 
-    if ((dp = opendir(".")) == NULL) {
-        fprintf(stderr,"cannot open directory\n");
-        return;
-    }
+    if ((dp = opendir(cpm.infile)) == NULL) FatalError('D', "VSTUPNY SUBOR NIE JE ADRESAR", 28);
 
-    FILE *out = fopen(cpm.outfile, "wa");
+    FILE *out;
+    out = fopen(cpm.outfile, "wa");
     if (out == NULL) FatalError('D', "VYSTUPNY SUBOR - CHYBA", 28);
 
     while ((entry = readdir(dp)) != NULL)
     {
         if (entry->d_name[0] == '.') continue;
+
         //if (strcmp(entry->d_name, cpm.infile) != 0) continue;
-        lstat(entry->d_name,&statbuf);
+        lstat(entry->d_name, &statbuf);
 
         strftime(buff, sizeof(buff), "%b %d %H:%M", localtime(&statbuf.st_atime));
 
@@ -404,14 +403,10 @@ void directory_copy (struct CopymasterOptions cpm)
 
         fprintf(out, "%3d %s %s %5lld %10s %s\n", statbuf.st_nlink,pwent.pw_name, grp.gr_name, statbuf.st_size, buff, entry->d_name);
 
-        //closedir(dp);
-
-        //return;
     }
     //FatalError('D', "VSTUPNY SUBOR NIE JE ADRESAR", 28);
 
     fclose(out);
-
     closedir(dp);
 }
 
