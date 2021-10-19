@@ -50,6 +50,7 @@ void directory_copy (struct CopymasterOptions cpm);
 void delete_copy (struct CopymasterOptions cpm);
 void chmod_copy (struct CopymasterOptions cpm);
 void inode_copy (struct CopymasterOptions cpm);
+void umask_copy (void );
 
 // === switches ===
 
@@ -94,6 +95,8 @@ int main(int argc, char* argv[])
     if (cpm_options.chmod_mode)      chmod_copy(cpm_options);
 
     if (cpm_options.inode_number)    inode_copy(cpm_options);
+
+    if (cpm_options.umask)           umask_copy();
 
     //-------------------------------------------------------------------
     
@@ -494,6 +497,13 @@ void inode_copy (struct CopymasterOptions cpm)
     close(in);
     close(out);
 }
+
+void umask_copy ()
+{
+    mode_t rights = umask(0777);
+    umask(rights);
+}
+
 
 // =======================================
 
