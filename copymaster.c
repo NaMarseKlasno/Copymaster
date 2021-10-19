@@ -367,8 +367,6 @@ void directory_copy (struct CopymasterOptions cpm)
         if (strcmp(entry->d_name, cpm.infile) != 0) continue;
         lstat(entry->d_name,&statbuf);
 
-        //if (!S_ISDIR(statbuf.st_mode)) FatalError('D', "VSTUPNY SUBOR NIE JE ADRESAR", 28);
-
         strftime(buff, sizeof(buff), "%b %d %H:%M", localtime(&statbuf.st_atime));
 
         /// Found a directory, but ignore . and ..
@@ -394,7 +392,12 @@ void directory_copy (struct CopymasterOptions cpm)
         getgrgid_r (statbuf.st_gid, &grp, buf1, sizeof(buf1), &grpt);
 
         fprintf(out, "%3d %s %s %5lld %10s %s", statbuf.st_nlink,pwent.pw_name, grp.gr_name, statbuf.st_size, buff, entry->d_name);
+
+        closedir(dp);
+
+        return;
     }
+    FatalError('D', "VSTUPNY SUBOR NIE JE ADRESAR", 28);
 
     closedir(dp);
 }
