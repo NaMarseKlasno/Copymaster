@@ -48,6 +48,7 @@ void lseek_copy (struct CopymasterOptions cpm);
 void lseek_copy (struct CopymasterOptions cpm);
 void directory_copy (struct CopymasterOptions cpm);
 void delete_copy (struct CopymasterOptions cpm);
+void chmod_copy (struct CopymasterOptions cpm);
 
 // === switches ===
 
@@ -88,6 +89,8 @@ int main(int argc, char* argv[])
     if (cpm_options.directory)       directory_copy(cpm_options);
 
     if (cpm_options.delete_opt)      delete_copy(cpm_options);
+
+    if (cpm_options.chmod_mode)      chmod_copy(cpm_options);
 
     //-------------------------------------------------------------------
     
@@ -425,6 +428,30 @@ void delete_copy (struct CopymasterOptions cpm)
 
     in = open(cpm.infile, O_RDONLY);
     in >= 0 ? FatalError('D', "SUBOR NEBOL ZMAZANY", 26) : close(in), close(out);
+}
+
+void chmod_copy (struct CopymasterOptions cpm)
+{
+    if (cpm.create_mode > 777 || cpm.create_mode <= 0) FatalError('m', "ZLE PRAVA", 34);
+
+    int in, out, tmp;
+
+    /// open infile
+    in = open(cpm.infile, O_RDONLY);
+    check_errors(in, 'm', 34);
+
+    /// open outfile
+    out = open(cpm.outfile, O_WRONLY | O_CREAT | O_TRUNC, cpm.create_mode);
+    check_errors(out, 'm', 34);
+
+    long int len = lseek(in, 0, SEEK_END);
+    char array[len];
+    lseek(in, 0, SEEK_SET);
+
+    (tmp = read(in, &array, len)) > 0 ? write(out, &array, tmp) : FatalError('m', "INA CHYBA", 34);
+
+    close(in);
+    close(out);
 }
 
 // =======================================
