@@ -3,3 +3,6 @@
 *copymaster
 *.DS_Store
 *bugs/
+*lib.h
+*my.h
+*test/

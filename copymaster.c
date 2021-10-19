@@ -7,9 +7,13 @@
 #include <fcntl.h>
 #include <stdbool.h>
 
+#include <sys/stat.h>
+#include <dirent.h>
+#include <time.h>
+#include <pwd.h>
+#include <grp.h>
 
 #include "options.h"
-
 
 /**                         <RACCOON>
  *
@@ -41,6 +45,8 @@ void create_copy (struct CopymasterOptions cpm);
 void overwrite_copy (struct CopymasterOptions cpm);
 void append_copy (struct CopymasterOptions cpm);
 void lseek_copy (struct CopymasterOptions cpm);
+void lseek_copy (struct CopymasterOptions cpm);
+void directory_copy (struct CopymasterOptions cpm);
 
 // === switches ===
 
@@ -54,26 +60,9 @@ void check_errors (int file, char flag, int status);
 int main(int argc, char* argv[])
 {
     struct CopymasterOptions cpm_options = ParseCopymasterOptions(argc, argv);
-
-
-    //-------------------------------------------------------------------
-    // Kontrola hodnot prepinacov
-
-
-
-    //if (cpm_options.fast) fast_copy(cpm_options);
-
-
-    //-------------------------------------------------------------------
-
-    // Vypis hodnot prepinacov odstrante z finalnej verzie
     
     PrintCopymasterOptions(&cpm_options);
-    
-    //-------------------------------------------------------------------
-    // Osetrenie prepinacov pred kopirovanim
-    //-------------------------------------------------------------------
-    
+
     if (cpm_options.fast && cpm_options.slow) {
         fprintf(stderr, "CHYBA PREPINACOV\n"); 
         exit(EXIT_FAILURE);
@@ -94,6 +83,8 @@ int main(int argc, char* argv[])
     if (cpm_options.append)          append_copy(cpm_options);
 
     if (cpm_options.lseek)           lseek_copy(cpm_options);
+
+    if (cpm_options.directory)       directory_copy(cpm_options);
 
 
     //-------------------------------------------------------------------
@@ -317,7 +308,7 @@ void append_copy (struct CopymasterOptions cpm)
 
 void lseek_copy (struct CopymasterOptions cpm)
 {
-    int in, out = 0;
+    int in, out = 0, tmp;
 
     /// open infile
     in = open(cpm.infile, O_RDONLY);
@@ -347,11 +338,61 @@ void lseek_copy (struct CopymasterOptions cpm)
             break;
     }
 
-    if (read(in, &array, len) == -1 ||  write(out, &array, len) == -1)
-        FatalError('l', "INA CHYBA", 33);
+    (tmp = read(in, &array, len)) > 0 ? write(out, &array, tmp) : FatalError('l', "INA CHYBA", 33);
 
     close(in);
     close(out);
+}
+
+void directory_copy (struct CopymasterOptions cpm)
+{
+
+    DIR *dp;
+
+    char buff[20], buf[1024], buf1[1024];;
+
+    struct dirent *entry;
+    struct stat statbuf;
+    struct passwd pwent, *pwentp;
+    struct group grp, *grpt;
+
+
+    if ((dp = opendir(".")) == NULL) {
+        fprintf(stderr,"cannot open directory\n");
+        return;
+    }
+
+    while ((entry = readdir(dp)) != NULL)
+    {
+        if (strcmp(entry->d_name, cpm.infile) != 0) continue;
+        lstat(entry->d_name,&statbuf);
+        strftime(buff, sizeof(buff), "%b %d %H:%M", localtime(&statbuf.st_atime));
+
+        /* Found a directory, but ignore . and .. */
+        if (strcmp(".",entry->d_name) == 0 ||strcmp("..",entry->d_name) == 0) continue;
+
+
+        FILE *out = fopen(cpm.outfile, "a");
+
+        fputs((S_ISDIR(statbuf.st_mode)) ? "d" : "-", out);
+        fputs((statbuf.st_mode & S_IRUSR) ? "r" : "-", out);
+        fputs((statbuf.st_mode & S_IWUSR) ? "w" : "-", out);
+        fputs((statbuf.st_mode & S_IXUSR) ? "x" : "-", out);
+        fputs((statbuf.st_mode & S_IRGRP) ? "r" : "-", out);
+        fputs((statbuf.st_mode & S_IWGRP) ? "w" : "-", out);
+        fputs((statbuf.st_mode & S_IXGRP) ? "x" : "-", out);
+        fputs((statbuf.st_mode & S_IROTH) ? "r" : "-", out);
+        fputs((statbuf.st_mode & S_IWOTH) ? "w" : "-", out);
+        fputs((statbuf.st_mode & S_IXOTH) ? "x" : "-", out);
+
+
+        getpwuid_r(statbuf.st_uid, &pwent, buf, sizeof(buf), &pwentp);
+        getgrgid_r (statbuf.st_gid, &grp, buf1, sizeof(buf1), &grpt);
+
+        fprintf(out, "%3d %s %s %5lld %10s %s\n", statbuf.st_nlink,pwent.pw_name, grp.gr_name, statbuf.st_size, buff, entry->d_name);
+    }
+
+    closedir(dp);
 }
 
 // =======================================
