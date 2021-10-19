@@ -436,7 +436,7 @@ void delete_copy (struct CopymasterOptions cpm)
 
 void chmod_copy (struct CopymasterOptions cpm)
 {
-    if (cpm.create_mode > 777 || cpm.create_mode <= 0) FatalError('m', "ZLE PRAVA", 34);
+    if (cpm.chmod_mode > 777 || cpm.chmod_mode <= 0) FatalError('m', "ZLE PRAVA", 34);
     int in, out, tmp;
 
     /// open infile
@@ -444,7 +444,7 @@ void chmod_copy (struct CopymasterOptions cpm)
     check_errors(in, 'm', 34);
 
     /// open outfile
-    out = open(cpm.outfile, O_WRONLY | O_CREAT | O_TRUNC, cpm.create_mode);
+    out = open(cpm.outfile, O_WRONLY | O_CREAT | O_TRUNC, cpm.chmod_mode);
     check_errors(out, 'm', 34);
 
     long int len = lseek(in, 0, SEEK_END);
@@ -459,13 +459,14 @@ void chmod_copy (struct CopymasterOptions cpm)
 
 void inode_copy (struct CopymasterOptions cpm)
 {
-    int in, out, tmp;
     DIR *dir;
-    struct dirent *entry;
+
+    int in, out, tmp;
+    struct dirent *entry = NULL;
 
     if ((dir = opendir(".")) == NULL) FatalError('i', "INA CHYBA", 27);
 
-    for (; strcmp(entry->d_name, cpm.infile) != 0 || entry != NULL; entry = readdir(dir));
+    while (strcmp(entry->d_name, cpm.infile) != 0) entry = readdir(dir);
 
     if (entry == NULL) FatalError('i', "SUBOR NEEXISTUJE", 27);
 
