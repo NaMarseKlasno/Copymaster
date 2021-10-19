@@ -368,7 +368,7 @@ void directory_copy (struct CopymasterOptions cpm)
 
     while ((entry = readdir(dp)) != NULL)
     {
-        if (strcmp(entry->d_name, cpm.infile) != 0) continue;
+        //if (strcmp(entry->d_name, cpm.infile) != 0) continue;
         lstat(entry->d_name,&statbuf);
 
         strftime(buff, sizeof(buff), "%b %d %H:%M", localtime(&statbuf.st_atime));
@@ -397,11 +397,11 @@ void directory_copy (struct CopymasterOptions cpm)
 
         fprintf(out, "%3d %s %s %5lld %10s %s\n", statbuf.st_nlink,pwent.pw_name, grp.gr_name, statbuf.st_size, buff, entry->d_name);
 
-        closedir(dp);
+        //closedir(dp);
 
-        return;
+        //return;
     }
-    FatalError('D', "VSTUPNY SUBOR NIE JE ADRESAR", 28);
+    //FatalError('D', "VSTUPNY SUBOR NIE JE ADRESAR", 28);
 
     closedir(dp);
 }
