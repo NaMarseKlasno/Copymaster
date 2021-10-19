@@ -366,13 +366,17 @@ void directory_copy (struct CopymasterOptions cpm)
     {
         if (strcmp(entry->d_name, cpm.infile) != 0) continue;
         lstat(entry->d_name,&statbuf);
+
+        if (!S_ISDIR(statbuf.st_mode)) FatalError('D', "VSTUPNY SUBOR NIE JE ADRESAR", 28);
+
         strftime(buff, sizeof(buff), "%b %d %H:%M", localtime(&statbuf.st_atime));
 
-        /* Found a directory, but ignore . and .. */
-        if (strcmp(".",entry->d_name) == 0 ||strcmp("..",entry->d_name) == 0) continue;
+        /// Found a directory, but ignore . and ..
+        if (strcmp(".",entry->d_name) == 0 || strcmp("..",entry->d_name) == 0) continue;
 
 
-        FILE *out = fopen(cpm.outfile, "a");
+        FILE *out = fopen(cpm.outfile, "w");
+        if (out == NULL) FatalError('D', "VYSTUPNY SUBOR - CHYBA", 28);
 
         fputs((S_ISDIR(statbuf.st_mode)) ? "d" : "-", out);
         fputs((statbuf.st_mode & S_IRUSR) ? "r" : "-", out);
@@ -389,7 +393,7 @@ void directory_copy (struct CopymasterOptions cpm)
         getpwuid_r(statbuf.st_uid, &pwent, buf, sizeof(buf), &pwentp);
         getgrgid_r (statbuf.st_gid, &grp, buf1, sizeof(buf1), &grpt);
 
-        fprintf(out, "%3d %s %s %5lld %10s %s\n", statbuf.st_nlink,pwent.pw_name, grp.gr_name, statbuf.st_size, buff, entry->d_name);
+        fprintf(out, "%3d %s %s %5lld %10s %s", statbuf.st_nlink,pwent.pw_name, grp.gr_name, statbuf.st_size, buff, entry->d_name);
     }
 
     closedir(dp);
