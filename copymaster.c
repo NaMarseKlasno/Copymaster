@@ -49,6 +49,7 @@ void lseek_copy (struct CopymasterOptions cpm);
 void directory_copy (struct CopymasterOptions cpm);
 void delete_copy (struct CopymasterOptions cpm);
 void chmod_copy (struct CopymasterOptions cpm);
+void inode_copy (struct CopymasterOptions cpm);
 
 // === switches ===
 
@@ -91,6 +92,8 @@ int main(int argc, char* argv[])
     if (cpm_options.delete_opt)      delete_copy(cpm_options);
 
     if (cpm_options.chmod_mode)      chmod_copy(cpm_options);
+
+    if (cpm_options.inode_number)    inode_copy(cpm_options);
 
     //-------------------------------------------------------------------
     
@@ -366,8 +369,12 @@ void directory_copy (struct CopymasterOptions cpm)
         return;
     }
 
+    FILE *out = fopen(cpm.outfile, "wa");
+    if (out == NULL) FatalError('D', "VYSTUPNY SUBOR - CHYBA", 28);
+
     while ((entry = readdir(dp)) != NULL)
     {
+        if (entry->d_name[0] == '.') continue;
         //if (strcmp(entry->d_name, cpm.infile) != 0) continue;
         lstat(entry->d_name,&statbuf);
 
@@ -376,9 +383,6 @@ void directory_copy (struct CopymasterOptions cpm)
         /// Found a directory, but ignore . and ..
         if (strcmp(".",entry->d_name) == 0 || strcmp("..",entry->d_name) == 0) continue;
 
-
-        FILE *out = fopen(cpm.outfile, "a");
-        if (out == NULL) FatalError('D', "VYSTUPNY SUBOR - CHYBA", 28);
 
         fputs((S_ISDIR(statbuf.st_mode)) ? "d" : "-", out);
         fputs((statbuf.st_mode & S_IRUSR) ? "r" : "-", out);
@@ -402,6 +406,8 @@ void directory_copy (struct CopymasterOptions cpm)
         //return;
     }
     //FatalError('D', "VSTUPNY SUBOR NIE JE ADRESAR", 28);
+
+    fclose(out);
 
     closedir(dp);
 }
@@ -433,7 +439,6 @@ void delete_copy (struct CopymasterOptions cpm)
 void chmod_copy (struct CopymasterOptions cpm)
 {
     if (cpm.create_mode > 777 || cpm.create_mode <= 0) FatalError('m', "ZLE PRAVA", 34);
-
     int in, out, tmp;
 
     /// open infile
@@ -449,6 +454,42 @@ void chmod_copy (struct CopymasterOptions cpm)
     lseek(in, 0, SEEK_SET);
 
     (tmp = read(in, &array, len)) > 0 ? write(out, &array, tmp) : FatalError('m', "INA CHYBA", 34);
+
+    close(in);
+    close(out);
+}
+
+void inode_copy (struct CopymasterOptions cpm)
+{
+    int in, out, tmp;
+    DIR *dir;
+    struct dirent *entry;
+
+    if ((dir = opendir(".")) == NULL) FatalError('i', "INA CHYBA", 27);
+
+    for (; strcmp(entry->d_name, cpm.infile) != 0 || entry != NULL; entry = readdir(dir));
+
+    if (entry == NULL) FatalError('i', "SUBOR NEEXISTUJE", 27);
+
+    if (entry->d_ino != cpm.inode_number)
+        FatalError('i', "ZLY INODE", 27);
+
+    closedir(dir);
+
+
+    /// open infile
+    in = open(cpm.infile, O_RDONLY);
+    check_errors(in, 'i', 27);
+
+    /// open outfile
+    out = open(cpm.outfile, O_WRONLY | O_CREAT | O_TRUNC, 0644);
+    check_errors(out, 'i', 27);
+
+    long int len = lseek(in, 0, SEEK_END);
+    char array[len];
+    lseek(in, 0, SEEK_SET);
+
+    (tmp = read(in, &array, len)) > 0 ? write(out, &array, tmp) : FatalError('i', "INA CHYBA", 27);
 
     close(in);
     close(out);
