@@ -509,10 +509,68 @@ void inode_copy (struct CopymasterOptions cpm)
 void umask_copy (struct CopymasterOptions cpm)
 {
 
-    struct stat STAT;
-    if (!stat(cpm.outfile, &STAT)) FatalError('u', "INA CHYBA", 32);
+    //struct stat STAT;
+    //stat(cpm.outfile, &STAT);
 
+    //printf("mode:%hu", cpm.create_mode);
 
+    mode_t MASK = cpm.create_mode;
+    //printf("\nMASK:%d\nst_mode: %d\n", MASK, STAT.st_mode);
+
+    for (int i = 0; cpm.umask_options[i][0]; ++i /*printf("MASK: %d\n", MASK)*/) {
+        //printf("%d\n", i);
+        if (cpm.umask_options[i][0] == 'o' && cpm.umask_options[i][2] == 'r') {
+            if (cpm.umask_options[i][1] == '+') MASK += S_IROTH;
+            else MASK -= S_IROTH;
+        }
+        if (cpm.umask_options[i][0] == 'o' && cpm.umask_options[i][2] == 'w') {
+            if (cpm.umask_options[i][1] == '+') MASK += S_IWOTH;
+            else MASK -= S_IWOTH;
+        }
+
+        if (cpm.umask_options[i][0] == 'o' && cpm.umask_options[i][2] == 'x') {
+            if (cpm.umask_options[i][1] == '+') MASK += S_IXOTH;
+            else MASK -= S_IXOTH;
+        }
+
+// -------------------------------------------------------------------------------------
+
+        if (cpm.umask_options[i][0] == 'g' && cpm.umask_options[i][2] == 'r') {
+            if (cpm.umask_options[i][1] == '+') MASK += S_IRGRP;
+            else MASK -= S_IRGRP;
+
+        }
+        if (cpm.umask_options[i][0] == 'g' && cpm.umask_options[i][2] == 'w') {
+            if (cpm.umask_options[i][1] == '+') MASK += S_IWGRP;
+            else MASK -= S_IWGRP;
+        }
+        if (cpm.umask_options[i][0] == 'g' && cpm.umask_options[i][2] == 'x') {
+            if (cpm.umask_options[i][1] == '+') MASK += S_IXGRP;
+            else MASK -= S_IXGRP;
+        }
+
+// -------------------------------------------------------------------------------------
+
+        if (cpm.umask_options[i][0] == 'u' && cpm.umask_options[i][2] == 'r') {
+            if (cpm.umask_options[i][1] == '+') MASK += S_IRUSR;
+            else MASK -= S_IRUSR;
+
+        }
+        if (cpm.umask_options[i][0] == 'u' && cpm.umask_options[i][2] == 'w') {
+            if (cpm.umask_options[i][1] == '+') MASK += S_IWUSR;
+            else MASK -= S_IWUSR;
+        }
+        if (cpm.umask_options[i][0] == 'u' && cpm.umask_options[i][2] == 'x') {
+            if (cpm.umask_options[i][1] == '+') MASK += S_IXUSR;
+            else MASK -= S_IXUSR;
+        }
+    }
+
+   // printf("MASK FINAL: %d",MASK);
+
+    //for (int i = 0; i < 3; ++i) printf("%c ", cpm.umask_options[i][0]);
+
+   // printf("MASK:%d\n", MASK);
 
     int in, out, tmp;
 
@@ -520,7 +578,7 @@ void umask_copy (struct CopymasterOptions cpm)
     check_errors(in, 'u', 32);
 
     /// open outfile
-    out = open(cpm.outfile, O_WRONLY | O_CREAT | O_TRUNC, 0644);
+    out = open(cpm.outfile, O_WRONLY | O_CREAT | O_TRUNC, MASK);
     check_errors(out, 'u', 32);
 
     long int len = lseek(in, 0, SEEK_END);
