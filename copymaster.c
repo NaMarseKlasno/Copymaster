@@ -50,7 +50,7 @@ void directory_copy (struct CopymasterOptions cpm);
 void delete_copy (struct CopymasterOptions cpm);
 void chmod_copy (struct CopymasterOptions cpm);
 void inode_copy (struct CopymasterOptions cpm);
-void umask_copy (void );
+void umask_copy (struct CopymasterOptions cpm);
 
 // === switches ===
 
@@ -96,7 +96,7 @@ int main(int argc, char* argv[])
 
     if (cpm_options.inode_number)    inode_copy(cpm_options);
 
-    if (cpm_options.umask)           umask_copy();
+    if (cpm_options.umask)           umask_copy(cpm_options);
 
     //-------------------------------------------------------------------
     
@@ -357,7 +357,7 @@ void lseek_copy (struct CopymasterOptions cpm)
 
 void directory_copy (struct CopymasterOptions cpm)
 {
-    DIR *dp;
+    DIR *dir;
 
     char buff[20], buf[1024], buf1[1024];;
 
@@ -367,13 +367,13 @@ void directory_copy (struct CopymasterOptions cpm)
     struct group grp, *grpt;
 
 
-    if ((dp = opendir(cpm.infile)) == NULL) FatalError('D', "VSTUPNY SUBOR NIE JE ADRESAR", 28);
+    if ((dir = opendir(cpm.infile)) == NULL) FatalError('D', "VSTUPNY SUBOR NIE JE ADRESAR", 28);
 
     FILE *out;
     out = fopen(cpm.outfile, "wa");
     if (out == NULL) FatalError('D', "VYSTUPNY SUBOR - CHYBA", 28);
 
-    while ((entry = readdir(dp)) != NULL)
+    while ((entry = readdir(dir)) != NULL)
     {
         if (entry->d_name[0] == '.') continue;
 
@@ -407,7 +407,7 @@ void directory_copy (struct CopymasterOptions cpm)
     //FatalError('D', "VSTUPNY SUBOR NIE JE ADRESAR", 28);
 
     fclose(out);
-    closedir(dp);
+    closedir(dir);
 }
 
 void delete_copy (struct CopymasterOptions cpm)
@@ -439,12 +439,15 @@ void chmod_copy (struct CopymasterOptions cpm)
     if (cpm.chmod_mode > 777 || cpm.chmod_mode <= 0) FatalError('m', "ZLE PRAVA", 34);
     int in, out, tmp;
 
+    struct stat STAT;
+    stat(cpm.outfile, &STAT);
+
     /// open infile
     in = open(cpm.infile, O_RDONLY);
     check_errors(in, 'm', 34);
 
     /// open outfile
-    out = open(cpm.outfile, O_WRONLY | O_CREAT | O_TRUNC, cpm.chmod_mode);
+    out = open(cpm.outfile, O_WRONLY | O_CREAT | O_TRUNC, 0644);
     check_errors(out, 'm', 34);
 
     long int len = lseek(in, 0, SEEK_END);
@@ -453,27 +456,36 @@ void chmod_copy (struct CopymasterOptions cpm)
 
     (tmp = read(in, &array, len)) > 0 ? write(out, &array, tmp) : FatalError('m', "INA CHYBA", 34);
 
+    STAT.st_mode = cpm.chmod_mode;
+
     close(in);
     close(out);
 }
 
 void inode_copy (struct CopymasterOptions cpm)
 {
-    DIR *dir;
+    //DIR *dir;
 
     int in, out, tmp;
-    struct dirent *entry = NULL;
 
-    if ((dir = opendir(".")) == NULL) FatalError('i', "INA CHYBA", 27);
+    struct stat STAT;
+    if (!stat(cpm.outfile, &STAT)) FatalError('i', "SUBOR NEEXISTUJE", 27);
 
-    while (strcmp(entry->d_name, cpm.infile) != 0) entry = readdir(dir);
+    if (STAT.st_ino != cpm.inode_number) FatalError('i', "ZLY INODE", 27);
 
-    if (entry == NULL) FatalError('i', "SUBOR NEEXISTUJE", 27);
 
-    if (entry->d_ino != cpm.inode_number)
-        FatalError('i', "ZLY INODE", 27);
-
-    closedir(dir);
+//    struct dirent *entry = NULL;
+//
+//    if ((dir = opendir(".")) == NULL) FatalError('i', "INA CHYBA", 27);
+//
+//    while (strcmp(entry->d_name, cpm.infile) != 0) entry = readdir(dir);
+//
+//    if (entry == NULL) FatalError('i', "SUBOR NEEXISTUJE", 27);
+//
+//    if (entry->d_ino != cpm.inode_number)
+//        FatalError('i', "ZLY INODE", 27);
+//
+//    closedir(dir);
 
 
     /// open infile
@@ -494,10 +506,31 @@ void inode_copy (struct CopymasterOptions cpm)
     close(out);
 }
 
-void umask_copy ()
+void umask_copy (struct CopymasterOptions cpm)
 {
-    mode_t rights = umask(0777);
-    umask(rights);
+
+    struct stat STAT;
+    if (!stat(cpm.outfile, &STAT)) FatalError('u', "INA CHYBA", 32);
+
+
+
+    int in, out, tmp;
+
+    in = open(cpm.infile, O_RDONLY);
+    check_errors(in, 'u', 32);
+
+    /// open outfile
+    out = open(cpm.outfile, O_WRONLY | O_CREAT | O_TRUNC, 0644);
+    check_errors(out, 'u', 32);
+
+    long int len = lseek(in, 0, SEEK_END);
+    char array[len];
+    lseek(in, 0, SEEK_SET);
+
+    (tmp = read(in, &array, len)) > 0 ? write(out, &array, tmp) : FatalError('u', "INA CHYBA", 32);
+
+    close(in);
+    close(out);
 }
 
 
