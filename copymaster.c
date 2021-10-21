@@ -418,7 +418,7 @@ void directory_copy (struct CopymasterOptions cpm)
         getpwuid_r(statbuf.st_uid, &pwent, buf, sizeof(buf), &pwentp);
         getgrgid_r (statbuf.st_gid, &grp, buf1, sizeof(buf1), &grpt);
 
-        fprintf(out, "%3d %s %s %5lld %10s %s\n", statbuf.st_nlink,pwent.pw_name, grp.gr_name, statbuf.st_size, buff, entry->d_name);
+        fprintf(out, " %d %s %s %lld %s %s\n", statbuf.st_nlink,pwent.pw_name, grp.gr_name, statbuf.st_size, buff, entry->d_name);
     }
 
     fclose(out);
@@ -551,7 +551,9 @@ void umask_copy (struct CopymasterOptions cpm)
 {
 //    struct stat STAT;
 //    lstat(cpm.outfile, &STAT);
-
+// - rwx r-x r-x
+// - rwx r-x r-x
+// - -w- --x r-t
     int MASK = cpm.create_mode;
     printf("\nMASK:%d\n", MASK);
     char BUF;
@@ -603,7 +605,9 @@ void umask_copy (struct CopymasterOptions cpm)
         }
     }
 
-    creat(cpm.outfile, MASK);
+    chmod(cpm.outfile, MASK);
+    //umask(MASK);
+    //creat(cpm.outfile, MASK);
 
     int in, out, tmp;
 
@@ -627,11 +631,8 @@ void umask_copy (struct CopymasterOptions cpm)
 }
 
 
+
 // =======================================
-
-
-
-
 
 
 
