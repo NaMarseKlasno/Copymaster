@@ -51,28 +51,15 @@ void delete_copy (struct CopymasterOptions cpm);
 void chmod_copy (struct CopymasterOptions cpm);
 void inode_copy (struct CopymasterOptions cpm);
 void umask_copy (struct CopymasterOptions cpm);
-
+void link_copy (struct CopymasterOptions cpm);
+void truncate_copy (struct CopymasterOptions cpm);
 // === switches ===
 
 
 // === secondary functions ===
 bool is_any_switch (struct CopymasterOptions cpm_options);
 void check_errors (int file, char flag, int status);
-
-char *sub_strings(const char *str1, const char *str2) {
-    int new_len = strlen(str1) + strlen(str2)+1;
-    char *res = calloc(new_len + 2, sizeof(char));
-    if (res == NULL) return NULL;
-    int i;
-    for (i = 0; i < strlen(str1); ++i)
-        res[i] = str1[i];
-    res[i] = '/';
-    ++i;
-    for (int j = i, k = 0; k < strlen(str2); ++k, ++j)
-        res[j] = str2[k];
-    res[new_len] = '\0';
-    return res;
-}
+char *sub_strings(const char *str1, const char *str2);
 // === secondary functions ===
 
 
@@ -112,6 +99,10 @@ int main(int argc, char* argv[])
     if (cpm_options.inode_number)    inode_copy(cpm_options);
 
     if (cpm_options.umask)           umask_copy(cpm_options);
+
+    if (cpm_options.link)            link_copy(cpm_options);
+
+    if (cpm_options.truncate)        truncate_copy(cpm_options);
 
     //-------------------------------------------------------------------
     
@@ -630,6 +621,45 @@ void umask_copy (struct CopymasterOptions cpm)
     close(out);
 }
 
+void link_copy (struct CopymasterOptions cpm)
+{
+    /// open infile
+    int in = open(cpm.infile, O_RDONLY);
+    check_errors(in, 'K', 30);
+    close(in);
+
+    link(cpm.infile,cpm.outfile) == 0 ? exit(0) : FatalError('K', "VYSTUPNY SUBOR NEVYTVORENY", 30);
+}
+
+void truncate_copy (struct CopymasterOptions cpm)
+{
+    if (cpm.truncate_size < 0) FatalError('t', "ZAPORNA VELKOST", 31);
+
+    int in, out, tmp;
+
+    /// open infile
+    in = open(cpm.infile, O_RDONLY);
+    check_errors(in, 't', 31);
+
+    /// open outfile
+    out = open(cpm.outfile, O_WRONLY | O_CREAT | O_TRUNC, 0644);
+    check_errors(out, 't', 31);
+
+    long int len = lseek(in, 0, SEEK_END);
+    char array[len];
+    lseek(in, 0, SEEK_SET);
+
+    (tmp = read(in, &array, len)) > 0 ? write(out, &array, tmp) : FatalError('t', "INA CHYBA", 31);
+
+    close(in);
+    close(out);
+
+    struct stat STAT;
+    lstat(cpm.infile, &STAT);
+
+    STAT.st_size = cpm.truncate_size;
+}
+
 
 
 // =======================================
@@ -651,4 +681,19 @@ void check_errors (int file, char flag, int status)
     if (file == ENOENT) FatalError(flag, "SUBOR NEEXISTUJE", status);
     else if (file == -1 || file == -2) FatalError(flag, "INA CHYBA", status);
 
+}
+
+char *sub_strings(const char *str1, const char *str2) {
+    int new_len = strlen(str1) + strlen(str2)+1;
+    char *res = calloc(new_len + 2, sizeof(char));
+    if (res == NULL) return NULL;
+    int i;
+    for (i = 0; i < strlen(str1); ++i)
+        res[i] = str1[i];
+    res[i] = '/';
+    ++i;
+    for (int j = i, k = 0; k < strlen(str2); ++k, ++j)
+        res[j] = str2[k];
+    res[new_len] = '\0';
+    return res;
 }
