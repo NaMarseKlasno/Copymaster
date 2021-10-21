@@ -58,6 +58,21 @@ void umask_copy (struct CopymasterOptions cpm);
 // === secondary functions ===
 bool is_any_switch (struct CopymasterOptions cpm_options);
 void check_errors (int file, char flag, int status);
+
+char *sub_strings(const char *str1, const char *str2) {
+    int new_len = strlen(str1) + strlen(str2)+1;
+    char *res = calloc(new_len + 2, sizeof(char));
+    if (res == NULL) return NULL;
+    int i;
+    for (i = 0; i < strlen(str1); ++i)
+        res[i] = str1[i];
+    res[i] = '/';
+    ++i;
+    for (int j = i, k = 0; k < strlen(str2); ++k, ++j)
+        res[j] = str2[k];
+    res[new_len] = '\0';
+    return res;
+}
 // === secondary functions ===
 
 
@@ -370,7 +385,7 @@ void directory_copy (struct CopymasterOptions cpm)
     if ((dir = opendir(cpm.infile)) == NULL) FatalError('D', "VSTUPNY SUBOR NIE JE ADRESAR", 28);
 
     FILE *out;
-    out = fopen(cpm.outfile, "wa");
+    out = fopen(cpm.outfile, "wb");
     if (out == NULL) FatalError('D', "VYSTUPNY SUBOR - CHYBA", 28);
 
     while ((entry = readdir(dir)) != NULL)
@@ -378,7 +393,9 @@ void directory_copy (struct CopymasterOptions cpm)
         if (entry->d_name[0] == '.') continue;
 
         //if (strcmp(entry->d_name, cpm.infile) != 0) continue;
-        lstat(entry->d_name, &statbuf);
+        //printf("SUO STR: %s\n", sup_strings(cpm.infile, entry->d_name));
+        lstat(sub_strings(cpm.infile, entry->d_name), &statbuf);
+        //printf("%s\n", statbuf.st_);
 
         strftime(buff, sizeof(buff), "%b %d %H:%M", localtime(&statbuf.st_atime));
 
@@ -402,9 +419,7 @@ void directory_copy (struct CopymasterOptions cpm)
         getgrgid_r (statbuf.st_gid, &grp, buf1, sizeof(buf1), &grpt);
 
         fprintf(out, "%3d %s %s %5lld %10s %s\n", statbuf.st_nlink,pwent.pw_name, grp.gr_name, statbuf.st_size, buff, entry->d_name);
-
     }
-    //FatalError('D', "VSTUPNY SUBOR NIE JE ADRESAR", 28);
 
     fclose(out);
     closedir(dir);
@@ -447,7 +462,7 @@ void chmod_copy (struct CopymasterOptions cpm)
     check_errors(in, 'm', 34);
 
     /// open outfile
-    out = open(cpm.outfile, O_WRONLY);
+    out = open(cpm.outfile, O_WRONLY | O_CREAT | O_TRUNC, 0644);
     check_errors(out, 'm', 34);
 
     long int len = lseek(in, 0, SEEK_END);
@@ -456,38 +471,51 @@ void chmod_copy (struct CopymasterOptions cpm)
 
     (tmp = read(in, &array, len)) > 0 ? write(out, &array, tmp) : FatalError('m', "INA CHYBA", 34);
 
-//    STAT.st_mode = cpm.chmod_mode;
-    chmod(cpm.outfile, cpm.chmod_mode);
+
+    struct stat STAT;
+    lstat(cpm.outfile, &STAT);
+//    printf("%d\n", STAT.st_mode);
 
     close(in);
     close(out);
+
+//    printf((S_ISDIR(STAT.st_mode)) ? "d" : "-");
+//    printf((STAT.st_mode & S_IRUSR) ? "r" : "-");
+//    printf((STAT.st_mode & S_IWUSR) ? "w" : "-");
+//    printf((STAT.st_mode & S_IXUSR) ? "x" : "-");
+//    printf((STAT.st_mode & S_IRGRP) ? "r" : "-");
+//    printf((STAT.st_mode & S_IWGRP) ? "w" : "-");
+//    printf((STAT.st_mode & S_IXGRP) ? "x" : "-");
+//    printf((STAT.st_mode & S_IROTH) ? "r" : "-");
+//    printf((STAT.st_mode & S_IWOTH) ? "w" : "-");
+//    printf((STAT.st_mode & S_IXOTH) ? "x" : "-");
+////
+    //chmod(cpm.outfile, cpm.chmod_mode);
+    STAT.st_mode = cpm.chmod_mode;
+    //if (in < 0) FatalError('m', "INA CHYBA", 34);
+
+//    lstat(cpm.outfile, &STAT);
+//
+//
+//    printf("%d\n", STAT.st_mode);
+//
+//    printf((S_ISDIR(STAT.st_mode)) ? "d" : "-");
+//    printf((STAT.st_mode & S_IRUSR) ? "r" : "-");
+//    printf((STAT.st_mode & S_IWUSR) ? "w" : "-");
+//    printf((STAT.st_mode & S_IXUSR) ? "x" : "-");
+//    printf((STAT.st_mode & S_IRGRP) ? "r" : "-");
+//    printf((STAT.st_mode & S_IWGRP) ? "w" : "-");
+//    printf((STAT.st_mode & S_IXGRP) ? "x" : "-");
+//    printf((STAT.st_mode & S_IROTH) ? "r" : "-");
+//    printf((STAT.st_mode & S_IWOTH) ? "w" : "-");
+//    printf((STAT.st_mode & S_IXOTH) ? "x" : "-");
+//
+    //---x-w-r--%
 }
 
 void inode_copy (struct CopymasterOptions cpm)
 {
-    //DIR *dir;
-
     int in, out, tmp;
-
-    struct stat STAT;
-    if (!stat(cpm.outfile, &STAT)) FatalError('i', "SUBOR NEEXISTUJE", 27);
-
-    if (STAT.st_ino != cpm.inode_number) FatalError('i', "ZLY INODE", 27);
-
-
-//    struct dirent *entry = NULL;
-//
-//    if ((dir = opendir(".")) == NULL) FatalError('i', "INA CHYBA", 27);
-//
-//    while (strcmp(entry->d_name, cpm.infile) != 0) entry = readdir(dir);
-//
-//    if (entry == NULL) FatalError('i', "SUBOR NEEXISTUJE", 27);
-//
-//    if (entry->d_ino != cpm.inode_number)
-//        FatalError('i', "ZLY INODE", 27);
-//
-//    closedir(dir);
-
 
     /// open infile
     in = open(cpm.infile, O_RDONLY);
@@ -526,7 +554,6 @@ void umask_copy (struct CopymasterOptions cpm)
             if ((BUF = cpm.umask_options[i][1]) == '+') MASK += 2;
             else if (BUF == '-') MASK -= 2;
         }
-
         else if (cpm.umask_options[i][0] == 'o' && cpm.umask_options[i][2] == 'x') {
             if ((BUF = cpm.umask_options[i][1]) == '+') MASK += 1;
             else if (BUF == '-') MASK -= 1;
