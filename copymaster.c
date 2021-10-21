@@ -472,9 +472,9 @@ void chmod_copy (struct CopymasterOptions cpm)
     (tmp = read(in, &array, len)) > 0 ? write(out, &array, tmp) : FatalError('m', "INA CHYBA", 34);
 
 
-    struct stat STAT;
-    lstat(cpm.outfile, &STAT);
-//    printf("%d\n", STAT.st_mode);
+//    struct stat STAT;
+//    lstat(cpm.outfile, &STAT);
+////    printf("%d\n", STAT.st_mode);
 
     close(in);
     close(out);
@@ -490,8 +490,8 @@ void chmod_copy (struct CopymasterOptions cpm)
 //    printf((STAT.st_mode & S_IWOTH) ? "w" : "-");
 //    printf((STAT.st_mode & S_IXOTH) ? "x" : "-");
 ////
-    //chmod(cpm.outfile, cpm.chmod_mode);
-    STAT.st_mode = cpm.chmod_mode;
+    chmod(cpm.outfile, cpm.chmod_mode);
+//    STAT.st_mode = cpm.chmod_mode;
     //if (in < 0) FatalError('m', "INA CHYBA", 34);
 
 //    lstat(cpm.outfile, &STAT);
