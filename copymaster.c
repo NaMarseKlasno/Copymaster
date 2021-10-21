@@ -397,7 +397,7 @@ void directory_copy (struct CopymasterOptions cpm)
         lstat(sub_strings(cpm.infile, entry->d_name), &statbuf);
         //printf("%s\n", statbuf.st_);
 
-        strftime(buff, sizeof(buff), "%b %d %H:%M", localtime(&statbuf.st_atime));
+        strftime(buff, sizeof(buff), "%d-%m-%Y", localtime(&statbuf.st_atime));
 
         /// Found a directory, but ignore . and ..
         if (strcmp(".",entry->d_name) == 0 || strcmp("..",entry->d_name) == 0) continue;
@@ -418,7 +418,7 @@ void directory_copy (struct CopymasterOptions cpm)
         getpwuid_r(statbuf.st_uid, &pwent, buf, sizeof(buf), &pwentp);
         getgrgid_r (statbuf.st_gid, &grp, buf1, sizeof(buf1), &grpt);
 
-        fprintf(out, " %d %s %s %lld %s %s\n", statbuf.st_nlink,pwent.pw_name, grp.gr_name, statbuf.st_size, buff, entry->d_name);
+        fprintf(out, " %d %s %s %lld %s %s\n", statbuf.st_nlink, pwent.pw_name, grp.gr_name, statbuf.st_size, buff, entry->d_name);
     }
 
     fclose(out);
