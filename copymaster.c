@@ -517,11 +517,23 @@ void inode_copy (struct CopymasterOptions cpm)
 {
     int in, out, tmp;
 
-    /// open infile
+    /// ***** open infile
     in = open(cpm.infile, O_RDONLY);
     check_errors(in, 'i', 27);
 
-    /// open outfile
+    ///  ***** check inode num
+    struct stat STAT;
+    lstat(cpm.infile, &STAT);
+
+    if (STAT.st_ino != cpm.inode_number) {
+        close(in);
+        FatalError('i', "ZLY INODE", 27);
+    }else if (!S_ISREG(STAT.st_mode)) {
+        close(in);
+        FatalError('i', "ZLY TYP VSTUPNEHO SUBORU", 27);
+    }
+
+    /// ***** open outfile
     out = open(cpm.outfile, O_WRONLY | O_CREAT | O_TRUNC, 0644);
     check_errors(out, 'i', 27);
 
