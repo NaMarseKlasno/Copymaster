@@ -568,31 +568,31 @@ void umask_copy (struct CopymasterOptions cpm)
 
         if (cpm.umask_options[i][0] == 'g' && cpm.umask_options[i][2] == 'r') {
             if ((BUF = cpm.umask_options[i][1]) == '+') MASK += 32;
-            else if (BUF == '-') MASK -= 32;
+            else if (BUF == '-') MASK -= 40;//32;
         }
         else if (cpm.umask_options[i][0] == 'g' && cpm.umask_options[i][2] == 'w') {
             if ((BUF = cpm.umask_options[i][1]) == '+') MASK += 16;
-            else if (BUF == '-') MASK -= 16;
+            else if (BUF == '-') MASK -= 20;//16;
         }
         else if (cpm.umask_options[i][0] == 'g' && cpm.umask_options[i][2] == 'x') {
             if ((BUF = cpm.umask_options[i][1]) == '+') MASK += 8;
-            else if (BUF == '-') MASK -= 8;
+            else if (BUF == '-') MASK -= 10;//8;
         }
 
 // -------------------------------------------------------------------------------------
 
         if (cpm.umask_options[i][0] == 'u' && cpm.umask_options[i][2] == 'r') {
             if ((BUF = cpm.umask_options[i][1]) == '+') MASK += 256;
-            else if (BUF == '-') MASK -= 256;
+            else if (BUF == '-') MASK -= 400;//256;
 
         }
         else if (cpm.umask_options[i][0] == 'u' && cpm.umask_options[i][2] == 'w') {
             if ((BUF = cpm.umask_options[i][1]) == '+') MASK += 128;
-            else if (BUF == '-') MASK -= 128;
+            else if (BUF == '-') MASK -= 200;///128;
         }
         else if (cpm.umask_options[i][0] == 'u' && cpm.umask_options[i][2] == 'x') {
             if ((BUF = cpm.umask_options[i][1]) == '+') MASK += 64;
-            else if (BUF == '-') MASK -= 64;
+            else if (BUF == '-') MASK -= 100;//64;
         }
     }
 
