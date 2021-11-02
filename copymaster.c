@@ -596,8 +596,8 @@ void umask_copy (struct CopymasterOptions cpm)
         }
     }
 
-    chmod(cpm.outfile, MASK);
-    //umask(MASK);
+    //chmod(cpm.outfile, MASK);
+    umask(MASK);
     //creat(cpm.outfile, MASK);
 
     int in, out, tmp;
@@ -633,9 +633,7 @@ void link_copy (struct CopymasterOptions cpm)
 
 void truncate_copy (struct CopymasterOptions cpm)
 {
-    if (cpm.truncate_size < 0) FatalError('t', "ZAPORNA VELKOST", 31);
-
-    int in, out, tmp;
+    int in, out, tmp, cuted_fd;
 
     /// open infile
     in = open(cpm.infile, O_RDONLY);
@@ -651,13 +649,11 @@ void truncate_copy (struct CopymasterOptions cpm)
 
     (tmp = read(in, &array, len)) > 0 ? write(out, &array, tmp) : FatalError('t', "INA CHYBA", 31);
 
+    cuted_fd = truncate(cpm.infile, cpm.truncate_size);
+    if (cuted_fd == -1) FatalError('t', "INA CHYBA", 31);
+
     close(in);
     close(out);
-
-    struct stat STAT;
-    lstat(cpm.infile, &STAT);
-
-    STAT.st_size = cpm.truncate_size;
 }
 
 
