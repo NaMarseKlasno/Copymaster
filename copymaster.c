@@ -538,7 +538,7 @@ int umask_copy (struct CopymasterOptions cpm)
 
     char BUF;
 
-    for (int i = 0; cpm.umask_options[i][0]; ++i, printf("MASK: %d\n", MASK)) {
+    for (int i = 0; cpm.umask_options[i][0]; ++i) { //printf("MASK: %d\n", MASK)) {
         //printf("%d\n", i);
         if (cpm.umask_options[i][0] == 'o' && cpm.umask_options[i][2] == 'r') {
             if ((BUF = cpm.umask_options[i][1]) == '+' && !(MASK & S_IROTH)) MASK = (MASK ^ 4);
@@ -586,7 +586,6 @@ int umask_copy (struct CopymasterOptions cpm)
         }
     }
 
-
     /// ***** new
     //umask(MASK);
     //chmod(cpm.outfile, (cpm.create_mode) - MASK);
@@ -600,11 +599,12 @@ int umask_copy (struct CopymasterOptions cpm)
     char array[len];
     lseek(in, 0, SEEK_SET);
 
+    if ((int)MASK > 777 || (int)MASK <= 0) FatalError('u', "ZLE PRAVA", 32);
+
     //MASK = (cpm.create_mode ^ MASK);
-    printf("%d\n", MASK);
+    //printf("%d\n", MASK);
     umask(MASK);
     chmod(cpm.outfile, MASK);
-    if ((int)MASK > 777 || (int)MASK <= 0) FatalError('u', "ZLE PRAVA", 32);
 
 
     /// open outfile
