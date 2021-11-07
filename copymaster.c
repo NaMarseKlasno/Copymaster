@@ -517,63 +517,75 @@ int umask_copy (struct CopymasterOptions cpm)
     // - -wx -wx --t   1 macbookpro  staff     42 Nov  7 17:23 outfile.txt
 //     -- wx -ws- --   1 macbookpro  staff     42 Nov  7 17:36 outfile.txt
 
-    MASK = 0046;
-    umask(0);
+    MASK = cpm.create_mode;
+    umask(0046);
 
-
-
-    //printf("\nMASK:%d\n", MASK);
+//
+//    fputs((S_ISDIR(statbuf.st_mode)) ? "d" : "-", out);
+//
+//    fputs((statbuf.st_mode & S_IRUSR) ? "r" : "-", out);
+//    fputs((statbuf.st_mode & S_IWUSR) ? "w" : "-", out);
+//    fputs((statbuf.st_mode & S_IXUSR) ? "x" : "-", out);
+//
+//    fputs((statbuf.st_mode & S_IRGRP) ? "r" : "-", out);
+//    fputs((statbuf.st_mode & S_IWGRP) ? "w" : "-", out);
+//    fputs((statbuf.st_mode & S_IXGRP) ? "x" : "-", out);
+//
+//    fputs((statbuf.st_mode & S_IROTH) ? "r" : "-", out);
+//    fputs((statbuf.st_mode & S_IWOTH) ? "w" : "-", out);
+//    fputs((statbuf.st_mode & S_IXOTH) ? "x" : "-", out);
 
 
     char BUF;
 
-    for (int i = 0; cpm.umask_options[i][0]; ++i) { //, printf("MASK: %d\n", MASK)) {
+    for (int i = 0; cpm.umask_options[i][0]; ++i, printf("MASK: %d\n", MASK)) {
         //printf("%d\n", i);
         if (cpm.umask_options[i][0] == 'o' && cpm.umask_options[i][2] == 'r') {
-            if ((BUF = cpm.umask_options[i][1]) == '+') MASK += 4;
-            else if (BUF == '-') MASK -= 4;
+            if ((BUF = cpm.umask_options[i][1]) == '+' && !(MASK & S_IROTH)) MASK = (MASK ^ 4);
+            else if (BUF == '-') MASK = (MASK - 4);
         }
         else if (cpm.umask_options[i][0] == 'o' && cpm.umask_options[i][2] == 'w') {
-            if ((BUF = cpm.umask_options[i][1]) == '+') MASK += 2;
-            else if (BUF == '-') MASK -= 2;
+            if ((BUF = cpm.umask_options[i][1]) == '+' && !(MASK & S_IWOTH)) MASK = (MASK ^ 2);
+            else if (BUF == '-') MASK = (MASK - 2);
         }
 
         else if (cpm.umask_options[i][0] == 'o' && cpm.umask_options[i][2] == 'x') {
-            if ((BUF = cpm.umask_options[i][1]) == '+') MASK += 1;
-            else if (BUF == '-') MASK -= 1;
+            if ((BUF = cpm.umask_options[i][1]) == '+' && !(MASK & S_IXOTH)) MASK = (MASK ^ 1);
+            else if (BUF == '-') MASK = (MASK - 1);
         }
 
 // -------------------------------------------------------------------------------------
 
         if (cpm.umask_options[i][0] == 'g' && cpm.umask_options[i][2] == 'r') {
-            if ((BUF = cpm.umask_options[i][1]) == '+') MASK += 40;
-            else if (BUF == '-') MASK -= 40;
+            if ((BUF = cpm.umask_options[i][1]) == '+' && !(MASK & S_IRGRP)) MASK = (MASK ^ 40);
+            else if (BUF == '-') MASK = (MASK - 40);
         }
         else if (cpm.umask_options[i][0] == 'g' && cpm.umask_options[i][2] == 'w') {
-            if ((BUF = cpm.umask_options[i][1]) == '+') MASK += 20;
-            else if (BUF == '-') MASK -= 20;
+            if ((BUF = cpm.umask_options[i][1]) == '+' && !(MASK & S_IWGRP)) MASK = (MASK ^ 20);
+            else if (BUF == '-') MASK = (MASK - 20);
         }
         else if (cpm.umask_options[i][0] == 'g' && cpm.umask_options[i][2] == 'x') {
-            if ((BUF = cpm.umask_options[i][1]) == '+') MASK += 10;
-            else if (BUF == '-') MASK -= 10;
+            if ((BUF = cpm.umask_options[i][1]) == '+' && !(MASK & S_IXGRP)) MASK = (MASK ^ 10);
+            else if (BUF == '-') MASK = (MASK - 10);
         }
 
 // -------------------------------------------------------------------------------------
 
         if (cpm.umask_options[i][0] == 'u' && cpm.umask_options[i][2] == 'r') {
-            if ((BUF = cpm.umask_options[i][1]) == '+') MASK += 400;
-            else if (BUF == '-') MASK -= 400;
+            if ((BUF = cpm.umask_options[i][1]) == '+' && !(MASK & S_IRUSR)) MASK = (MASK + 400);
+            else if (BUF == '-') MASK = (MASK - 400);
 
         }
         else if (cpm.umask_options[i][0] == 'u' && cpm.umask_options[i][2] == 'w') {
-            if ((BUF = cpm.umask_options[i][1]) == '+') MASK += 200;
-            else if (BUF == '-') MASK -= 200;
+            if ((BUF = cpm.umask_options[i][1]) == '+' && !(MASK & S_IWUSR)) MASK = (MASK + 200);
+            else if (BUF == '-') MASK = (MASK - 200);
         }
         else if (cpm.umask_options[i][0] == 'u' && cpm.umask_options[i][2] == 'x') {
-            if ((BUF = cpm.umask_options[i][1]) == '+') MASK += 100;
-            else if (BUF == '-') MASK -= 100;
+            if ((BUF = cpm.umask_options[i][1]) == '+' && !(MASK & S_IXUSR)) MASK = (MASK + 100);
+            else if (BUF == '-') MASK = (MASK - 100);
         }
     }
+
 
     /// ***** new
     //umask(MASK);
@@ -588,11 +600,11 @@ int umask_copy (struct CopymasterOptions cpm)
     char array[len];
     lseek(in, 0, SEEK_SET);
 
-    MASK = (cpm.create_mode - MASK);
+    //MASK = (cpm.create_mode ^ MASK);
     printf("%d\n", MASK);
     umask(MASK);
-    //chmod(cpm.outfile, MASK);
-    //if ((int)MASK > 777 || (int)MASK <= 0) FatalError('u', "ZLE PRAVA", 32);
+    chmod(cpm.outfile, MASK);
+    if ((int)MASK > 777 || (int)MASK <= 0) FatalError('u', "ZLE PRAVA", 32);
 
 
     /// open outfile
