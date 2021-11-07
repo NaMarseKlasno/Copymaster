@@ -588,11 +588,11 @@ int umask_copy (struct CopymasterOptions cpm)
     char array[len];
     lseek(in, 0, SEEK_SET);
 
-    MASK = (cpm.create_mode + MASK);
+    MASK = (cpm.create_mode - MASK);
     printf("%d\n", MASK);
     umask(MASK);
     //chmod(cpm.outfile, MASK);
-    if ((int)MASK > 777 || (int)MASK <= 0) FatalError('u', "ZLE PRAVA", 32);
+    //if ((int)MASK > 777 || (int)MASK <= 0) FatalError('u', "ZLE PRAVA", 32);
 
 
     /// open outfile
