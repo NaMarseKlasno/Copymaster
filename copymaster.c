@@ -12,7 +12,7 @@
 #include <time.h>
 #include <pwd.h>
 #include <grp.h>
-
+#include <math.h>
 #include "options.h"
 
 /**                         <RACCOON>
@@ -50,7 +50,7 @@ void directory_copy (struct CopymasterOptions cpm);
 void delete_copy (struct CopymasterOptions cpm);
 void chmod_copy (struct CopymasterOptions cpm);
 void inode_copy (struct CopymasterOptions cpm);
-void umask_copy (struct CopymasterOptions cpm);
+int umask_copy (struct CopymasterOptions cpm);
 void link_copy (struct CopymasterOptions cpm);
 void truncate_copy (struct CopymasterOptions cpm);
 // === switches ===
@@ -266,14 +266,20 @@ void create_copy (struct CopymasterOptions cpm)
     /// open outfile
     if (cpm.create_mode > 777 || cpm.create_mode <= 0) FatalError('c', "ZLE PRAVA", 23);
 
-    open(cpm.outfile, O_RDONLY) < 0 ? (out = open(cpm.outfile, O_WRONLY | O_CREAT | O_TRUNC, cpm.create_mode)) :  FatalError('c', "SUBOR EXISTUJE", 23);
+    umask(0);
+    out = open(cpm.outfile, O_WRONLY | O_EXCL | O_CREAT, cpm.create_mode);
+    //open(cpm.outfile, O_RDONLY) < 0 ? (out = open(cpm.outfile, O_WRONLY | O_EXCL | O_CREAT, cpm.create_mode)) :  FatalError('c', "SUBOR EXISTUJE", 23);
     check_errors(out, 'c', 23);
+//    printf("lololololo\n");
 
     long int len = lseek(in, 0, SEEK_END);
     char array[len];
     lseek(in, 0, SEEK_SET);
 
-    (tmp = read(in, &array, len)) > 0 ? write(out, &array, tmp) : FatalError('c', "INA CHYBA", 23);
+    while ((tmp = read(in, &array, 1)) > 0) {
+        write(out, &array, tmp);
+    }
+    //(tmp = read(in, &array, len)) > 0 ? write(out, &array, tmp) : FatalError('c', "INA CHYBA", 23);
 
     close(in);
     close(out);
@@ -462,46 +468,10 @@ void chmod_copy (struct CopymasterOptions cpm)
 
     (tmp = read(in, &array, len)) > 0 ? write(out, &array, tmp) : FatalError('m', "INA CHYBA", 34);
 
-
-//    struct stat STAT;
-//    lstat(cpm.outfile, &STAT);
-////    printf("%d\n", STAT.st_mode);
-
     close(in);
     close(out);
 
-//    printf((S_ISDIR(STAT.st_mode)) ? "d" : "-");
-//    printf((STAT.st_mode & S_IRUSR) ? "r" : "-");
-//    printf((STAT.st_mode & S_IWUSR) ? "w" : "-");
-//    printf((STAT.st_mode & S_IXUSR) ? "x" : "-");
-//    printf((STAT.st_mode & S_IRGRP) ? "r" : "-");
-//    printf((STAT.st_mode & S_IWGRP) ? "w" : "-");
-//    printf((STAT.st_mode & S_IXGRP) ? "x" : "-");
-//    printf((STAT.st_mode & S_IROTH) ? "r" : "-");
-//    printf((STAT.st_mode & S_IWOTH) ? "w" : "-");
-//    printf((STAT.st_mode & S_IXOTH) ? "x" : "-");
-////
     chmod(cpm.outfile, cpm.chmod_mode);
-//    STAT.st_mode = cpm.chmod_mode;
-    //if (in < 0) FatalError('m', "INA CHYBA", 34);
-
-//    lstat(cpm.outfile, &STAT);
-//
-//
-//    printf("%d\n", STAT.st_mode);
-//
-//    printf((S_ISDIR(STAT.st_mode)) ? "d" : "-");
-//    printf((STAT.st_mode & S_IRUSR) ? "r" : "-");
-//    printf((STAT.st_mode & S_IWUSR) ? "w" : "-");
-//    printf((STAT.st_mode & S_IXUSR) ? "x" : "-");
-//    printf((STAT.st_mode & S_IRGRP) ? "r" : "-");
-//    printf((STAT.st_mode & S_IWGRP) ? "w" : "-");
-//    printf((STAT.st_mode & S_IXGRP) ? "x" : "-");
-//    printf((STAT.st_mode & S_IROTH) ? "r" : "-");
-//    printf((STAT.st_mode & S_IWOTH) ? "w" : "-");
-//    printf((STAT.st_mode & S_IXOTH) ? "x" : "-");
-//
-    //---x-w-r--%
 }
 
 void inode_copy (struct CopymasterOptions cpm)
@@ -538,18 +508,26 @@ void inode_copy (struct CopymasterOptions cpm)
     close(out);
 }
 
-void umask_copy (struct CopymasterOptions cpm)
+int umask_copy (struct CopymasterOptions cpm)
 {
-//    struct stat STAT;
-//    lstat(cpm.outfile, &STAT);
-// - rwx r-x r-x
-// - rwx r-x r-x
-// - -w- --x r-t
-    int MASK = cpm.create_mode;
-    printf("\nMASK:%d\n", MASK);
+    mode_t MASK;
+    //newmask = S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH;
+
+    // - -wx -wx --t
+    // - -wx -wx --t   1 macbookpro  staff     42 Nov  7 17:23 outfile.txt
+//     -- wx -ws- --   1 macbookpro  staff     42 Nov  7 17:36 outfile.txt
+
+    MASK = 0046;
+    umask(0);
+
+
+
+    //printf("\nMASK:%d\n", MASK);
+
+
     char BUF;
 
-    for (int i = 0; cpm.umask_options[i][0]; ++i, printf("MASK: %d\n", MASK)) {
+    for (int i = 0; cpm.umask_options[i][0]; ++i) { //, printf("MASK: %d\n", MASK)) {
         //printf("%d\n", i);
         if (cpm.umask_options[i][0] == 'o' && cpm.umask_options[i][2] == 'r') {
             if ((BUF = cpm.umask_options[i][1]) == '+') MASK += 4;
@@ -559,6 +537,7 @@ void umask_copy (struct CopymasterOptions cpm)
             if ((BUF = cpm.umask_options[i][1]) == '+') MASK += 2;
             else if (BUF == '-') MASK -= 2;
         }
+
         else if (cpm.umask_options[i][0] == 'o' && cpm.umask_options[i][2] == 'x') {
             if ((BUF = cpm.umask_options[i][1]) == '+') MASK += 1;
             else if (BUF == '-') MASK -= 1;
@@ -567,58 +546,76 @@ void umask_copy (struct CopymasterOptions cpm)
 // -------------------------------------------------------------------------------------
 
         if (cpm.umask_options[i][0] == 'g' && cpm.umask_options[i][2] == 'r') {
-            if ((BUF = cpm.umask_options[i][1]) == '+') MASK += 32;
-            else if (BUF == '-') MASK -= 40;//32;
+            if ((BUF = cpm.umask_options[i][1]) == '+') MASK += 40;
+            else if (BUF == '-') MASK -= 40;
         }
         else if (cpm.umask_options[i][0] == 'g' && cpm.umask_options[i][2] == 'w') {
-            if ((BUF = cpm.umask_options[i][1]) == '+') MASK += 16;
-            else if (BUF == '-') MASK -= 20;//16;
+            if ((BUF = cpm.umask_options[i][1]) == '+') MASK += 20;
+            else if (BUF == '-') MASK -= 20;
         }
         else if (cpm.umask_options[i][0] == 'g' && cpm.umask_options[i][2] == 'x') {
-            if ((BUF = cpm.umask_options[i][1]) == '+') MASK += 8;
-            else if (BUF == '-') MASK -= 10;//8;
+            if ((BUF = cpm.umask_options[i][1]) == '+') MASK += 10;
+            else if (BUF == '-') MASK -= 10;
         }
 
 // -------------------------------------------------------------------------------------
 
         if (cpm.umask_options[i][0] == 'u' && cpm.umask_options[i][2] == 'r') {
-            if ((BUF = cpm.umask_options[i][1]) == '+') MASK += 256;
-            else if (BUF == '-') MASK -= 400;//256;
+            if ((BUF = cpm.umask_options[i][1]) == '+') MASK += 400;
+            else if (BUF == '-') MASK -= 400;
 
         }
         else if (cpm.umask_options[i][0] == 'u' && cpm.umask_options[i][2] == 'w') {
-            if ((BUF = cpm.umask_options[i][1]) == '+') MASK += 128;
-            else if (BUF == '-') MASK -= 200;///128;
+            if ((BUF = cpm.umask_options[i][1]) == '+') MASK += 200;
+            else if (BUF == '-') MASK -= 200;
         }
         else if (cpm.umask_options[i][0] == 'u' && cpm.umask_options[i][2] == 'x') {
-            if ((BUF = cpm.umask_options[i][1]) == '+') MASK += 64;
-            else if (BUF == '-') MASK -= 100;//64;
+            if ((BUF = cpm.umask_options[i][1]) == '+') MASK += 100;
+            else if (BUF == '-') MASK -= 100;
         }
     }
 
-    //chmod(cpm.outfile, MASK);
-    umask(MASK);
-    //creat(cpm.outfile, MASK);
+    /// ***** new
+    //umask(MASK);
+    //chmod(cpm.outfile, (cpm.create_mode) - MASK);
 
+    //creat(cpm.outfile, MASK);
     int in, out, tmp;
 
     in = open(cpm.infile, O_RDONLY);
     check_errors(in, 'u', 32);
-
-    /// open outfile
-    out = open(cpm.outfile, O_WRONLY);
-    check_errors(out, 'u', 32);
-
-    //chmod(cpm.outfile, MASK);
-
     long int len = lseek(in, 0, SEEK_END);
     char array[len];
     lseek(in, 0, SEEK_SET);
 
-    (tmp = read(in, &array, len)) > 0 ? write(out, &array, tmp) : FatalError('u', "INA CHYBA", 32);
+    MASK = (cpm.create_mode + MASK);
+    printf("%d\n", MASK);
+    umask(MASK);
+    //chmod(cpm.outfile, MASK);
+    if ((int)MASK > 777 || (int)MASK <= 0) FatalError('u', "ZLE PRAVA", 32);
+
+
+    /// open outfile
+    out = open(cpm.outfile, O_WRONLY | O_CREAT | O_TRUNC, 0644);
+    if (out == -1) {
+        fprintf(stderr, "-d: %d\n", errno);
+        fprintf(stderr, "-d: %s\n", strerror(errno));
+        fprintf(stderr, "-d: INA CHYBA\n");
+        exit(32);
+    }
+    //check_errors(out, 'L', 32);
+
+    //chmod(cpm.outfile, MASK);
+
+
+    (tmp = read(in, &array, len)) != 0 ? write(out, &array, tmp) : FatalError('u', "INA CHYBA", 32);
 
     close(in);
     close(out);
+
+    chmod(cpm.outfile, (cpm.create_mode + MASK));
+
+    exit(0);
 }
 
 void link_copy (struct CopymasterOptions cpm)
