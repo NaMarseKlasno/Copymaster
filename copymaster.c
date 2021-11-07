@@ -599,17 +599,17 @@ int umask_copy (struct CopymasterOptions cpm)
     char array[len];
     lseek(in, 0, SEEK_SET);
 
-    printf("%o\n", MASK);
 
     if ((int)MASK > 777 || (int)MASK <= 0) FatalError('u', "ZLE PRAVA", 32);
 
-    //MASK = (MASK - 999);
+    //printf("%o\n", MASK);
     umask(MASK);
+    chmod(cpm.outfile, MASK);
 
 
 
     /// open outfile
-    out = open(cpm.outfile, O_WRONLY);
+    out = open(cpm.outfile, O_WRONLY | O_CREAT | O_TRUNC, 0644);
     if (out == -1) {
         fprintf(stderr, "-d: %d\n", errno);
         fprintf(stderr, "-d: %s\n", strerror(errno));
